@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axiosInstance from "../../utils/axiosInstance";
+import { client } from "../../api/client";
+import Spinner from "../../components/Spinner";
 
 const STATUS_STYLES = {
   pending:    "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -16,18 +17,17 @@ const PAYMENT_STYLES = {
 };
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [orders, setOrders]       = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
-    axiosInstance
-      .get("/api/orders/admin")
+    client.get("/api/orders/admin")
       .then(({ data }) => {
         setOrders(data.map((o) => ({
           ...o,
-          items: Array.isArray(o.items) ? o.items : [],
+          items:       Array.isArray(o.items) ? o.items : [],
           totalAmount: typeof o.totalAmount === "number" ? o.totalAmount : (o.amount || 0),
         })));
       })
@@ -38,7 +38,7 @@ const AdminOrders = () => {
   const handleStatusUpdate = async (orderId, field, value) => {
     setUpdatingId(orderId);
     try {
-      const { data } = await axiosInstance.put(`/api/orders/${orderId}/status`, { [field]: value });
+      const { data } = await client.put(`/api/orders/${orderId}/status`, { [field]: value });
       setOrders((prev) => prev.map((o) => o._id === orderId
         ? { ...data, items: Array.isArray(data.items) ? data.items : [], totalAmount: data.totalAmount || 0 }
         : o
@@ -50,16 +50,7 @@ const AdminOrders = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-          <div className="text-4xl mb-3">⏳</div>
-          <p className="text-slate-500">Loading orders...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <Spinner />;
 
   if (error) {
     return (
@@ -68,10 +59,7 @@ const AdminOrders = () => {
           <div className="text-4xl mb-3">❌</div>
           <p className="font-semibold text-red-600 mb-2">Failed to load orders</p>
           <p className="text-slate-500 text-sm mb-5">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors"
-          >
+          <button onClick={() => window.location.reload()} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
             Try Again
           </button>
         </div>
@@ -81,19 +69,12 @@ const AdminOrders = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">📋 All Orders</h2>
-          <p className="text-slate-500 text-sm mt-1">
-            {orders.length} order{orders.length !== 1 ? "s" : ""} total
-          </p>
+          <p className="text-slate-500 text-sm mt-1">{orders.length} order{orders.length !== 1 ? "s" : ""} total</p>
         </div>
-        <Link
-          to="/admin/dashboard"
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-lg transition-colors"
-        >
+        <Link to="/admin/dashboard" className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-lg transition-colors">
           ← Back to Dashboard
         </Link>
       </div>
@@ -106,30 +87,18 @@ const AdminOrders = () => {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <div
-              key={order._id}
-              className="bg-white rounded-2xl shadow-sm border-l-4 border-indigo-500 p-5 hover:shadow-md transition-shadow"
-            >
-              {/* Order Header */}
+            <div key={order._id} className="bg-white rounded-2xl shadow-sm border-l-4 border-indigo-500 p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
                 <div>
                   <p className="font-bold text-slate-800">
-                    Order{" "}
-                    <span className="font-mono tracking-wide text-indigo-600">
-                      #{order._id.slice(-8).toUpperCase()}
-                    </span>
+                    Order <span className="font-mono tracking-wide text-indigo-600">#{order._id.slice(-8).toUpperCase()}</span>
                   </p>
                   <p className="text-slate-500 text-sm mt-0.5">
                     👤 <span className="font-medium text-slate-700">{order.user?.name || "Unknown"}</span>
                     {order.user?.email ? ` · ${order.user.email}` : ""}
-                    {" · "}
-                    {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                      day: "numeric", month: "short", year: "numeric",
-                    })}
+                    {" · "}{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                 </div>
-
-                {/* Status selects */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <select
                     value={order.status}
@@ -141,7 +110,6 @@ const AdminOrders = () => {
                       <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
                     ))}
                   </select>
-
                   <select
                     value={order.paymentStatus || "unpaid"}
                     disabled={updatingId === order._id}
@@ -151,23 +119,19 @@ const AdminOrders = () => {
                     <option value="unpaid">Unpaid</option>
                     <option value="paid">Paid</option>
                   </select>
-
-                  {updatingId === order._id && (
-                    <span className="text-xs text-slate-400">Saving...</span>
-                  )}
+                  {updatingId === order._id && <span className="text-xs text-slate-400">Saving...</span>}
                 </div>
               </div>
 
-              {/* Items */}
               {order.items.length > 0 ? (
                 <div className="table-scroll">
                   <table className="w-full text-sm mb-3">
                     <thead>
                       <tr>
-                        <th className="text-left py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide font-semibold border-b border-slate-200">Product</th>
-                        <th className="text-center py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide font-semibold border-b border-slate-200">Qty</th>
-                        <th className="text-right py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide font-semibold border-b border-slate-200">Unit Price</th>
-                        <th className="text-right py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase tracking-wide font-semibold border-b border-slate-200">Subtotal</th>
+                        <th className="text-left py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-200">Product</th>
+                        <th className="text-center py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-200">Qty</th>
+                        <th className="text-right py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-200">Unit Price</th>
+                        <th className="text-right py-2 px-3 bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-200">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -176,9 +140,7 @@ const AdminOrders = () => {
                           <td className="py-2.5 px-3 text-slate-700">{item.name || "—"}</td>
                           <td className="py-2.5 px-3 text-center text-slate-600">{item.quantity}</td>
                           <td className="py-2.5 px-3 text-right text-slate-600">${(item.price || 0).toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right font-semibold text-slate-800">
-                            ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
-                          </td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-slate-800">${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -188,15 +150,9 @@ const AdminOrders = () => {
                 <p className="text-slate-400 text-sm mb-3">No items data available.</p>
               )}
 
-              {/* Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                {order.shippingAddress
-                  ? <p className="text-slate-500 text-sm">📍 {order.shippingAddress}</p>
-                  : <span />
-                }
-                <p className="font-bold text-indigo-600 text-base">
-                  Total: ${(order.totalAmount || 0).toFixed(2)}
-                </p>
+                {order.shippingAddress ? <p className="text-slate-500 text-sm">📍 {order.shippingAddress}</p> : <span />}
+                <p className="font-bold text-indigo-600 text-base">Total: ${(order.totalAmount || 0).toFixed(2)}</p>
               </div>
             </div>
           ))}

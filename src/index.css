@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Only what Tailwind cannot do natively */
-
-/* Line-clamp for product card names */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -12,9 +9,7 @@
   overflow: hidden;
 }
 
-/* Smooth scrollbar */
 html { scroll-behavior: smooth; }
 body { -webkit-font-smoothing: antialiased; }
 
-/* Table overflow on mobile */
 .table-scroll { overflow-x: auto; }

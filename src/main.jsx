@@ -1,11 +1,3 @@
-/**
- * ENTRY POINT - src/main.jsx
- *
- * Wraps the entire app in:
- * - AuthProvider: Makes auth state available everywhere via Context API
- * - BrowserRouter: Enables React Router's client-side routing
- */
-
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";

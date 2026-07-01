@@ -1,12 +1,7 @@
 node_modules/
 dist/
-
-# Local env files — never commit real secrets
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Safe to commit — contains only placeholder values
-# !.env.example
