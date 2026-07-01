@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext, useEffect } from "react";
 import { client } from "../api/client";
 
 const AuthContext = createContext(null);
@@ -10,10 +10,23 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token     = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
+
     if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-      client.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && parsed._id && parsed.role) {
+          setUser(parsed);
+          client.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        } else {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+      } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
     }
+
     setLoading(false);
   }, []);
 
