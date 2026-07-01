@@ -6,30 +6,33 @@ import { client } from "../../api/client";
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats]   = useState({ products: 0, orders: 0 });
+  const [stats,   setStats]   = useState({ totalProducts: 0, totalOrders: 0, totalUsers: 0 });
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
 
   useEffect(() => {
-    Promise.all([
-      client.get("/api/products"),
-      client.get("/api/orders/admin"),
-    ])
-      .then(([products, orders]) => {
-        setStats({ products: products.data.length, orders: orders.data.length });
-      })
-      .catch(() => {})
+    client.get("/api/admin/stats")
+      .then(({ data }) => setStats(data.data))
+      .catch(() => setError("Failed to load stats"))
       .finally(() => setLoading(false));
   }, []);
 
+  const statCards = [
+    { icon: "👥", value: stats.totalUsers,    label: "Total Users",    color: "text-rose-600"   },
+    { icon: "🛍️", value: stats.totalProducts, label: "Total Products", color: "text-indigo-600" },
+    { icon: "📦", value: stats.totalOrders,   label: "Total Orders",   color: "text-emerald-600" },
+  ];
+
   const actionCards = [
-    { to: "/admin/products/add", bg: "bg-indigo-600",  icon: "➕", label: "Add New Product" },
-    { to: "/admin/products",     bg: "bg-slate-900",   icon: "🛍️", label: "Manage Products" },
-    { to: "/admin/orders",       bg: "bg-emerald-700", icon: "📋", label: "View All Orders" },
+    { to: "/admin/products/add", bg: "bg-indigo-600",  icon: "➕", label: "Add New Product"  },
+    { to: "/admin/products",     bg: "bg-slate-900",   icon: "🛍️", label: "Manage Products"  },
+    { to: "/admin/orders",       bg: "bg-emerald-700", icon: "📋", label: "View All Orders"   },
     { to: "/admin/products",     bg: "bg-violet-600",  icon: "📊", label: "Product Analytics" },
   ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">🛡️ Admin Dashboard</h2>
@@ -43,23 +46,21 @@ const AdminDashboard = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl shadow-sm p-6 text-center">
-          <div className="text-3xl mb-1">🛍️</div>
-          <p className="text-3xl font-extrabold text-indigo-600 mt-1">{loading ? "—" : stats.products}</p>
-          <p className="font-semibold text-slate-700 mt-1">Total Products</p>
+      {error ? (
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 text-center text-red-500 text-sm">{error}</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {statCards.map(({ icon, value, label, color }) => (
+            <div key={label} className="bg-white rounded-2xl shadow-sm p-6 text-center">
+              <div className="text-3xl mb-1">{icon}</div>
+              <p className={`text-3xl font-extrabold mt-1 ${color}`}>
+                {loading ? "—" : value}
+              </p>
+              <p className="font-semibold text-slate-700 mt-1">{label}</p>
+            </div>
+          ))}
         </div>
-        <div className="bg-white rounded-2xl shadow-sm p-6 text-center">
-          <div className="text-3xl mb-1">📦</div>
-          <p className="text-3xl font-extrabold text-indigo-600 mt-1">{loading ? "—" : stats.orders}</p>
-          <p className="font-semibold text-slate-700 mt-1">Total Orders</p>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-6 text-center">
-          <div className="text-3xl mb-1">🛡️</div>
-          <p className="font-semibold text-slate-700 mt-2">Admin</p>
-          <p className="text-slate-400 text-xs mt-1 truncate">{user?.email}</p>
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         {actionCards.map((card) => (
